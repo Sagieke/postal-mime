@@ -1,3 +1,4 @@
+import iconv from 'iconv-lite';
 export const textEncoder = new TextEncoder();
 
 const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -43,10 +44,23 @@ export function decodeBase64(base64) {
 }
 
 export function getDecoder(charset) {
-    charset = charset || 'utf8';
-    return new TextDecoder(charset);
-}
+    if (charset === 'iso-8859-8-i') {
+        charset = 'iso-8859-8';
+    }
+    const normalizedCharset = (charset || 'utf-8').toLowerCase();
 
+    return {
+        decode: function (buffer) {
+            try {
+                // Use iconv-lite to convert the buffer to a string
+                return iconv.decode(Buffer.from(buffer), normalizedCharset);
+            } catch (e) {
+                console.warn(`Error decoding with charset ${normalizedCharset}, falling back to utf-8`);
+                return iconv.decode(Buffer.from(buffer), 'utf-8');
+            }
+        }
+    };
+}
 /**
  * Converts a Blob into an ArrayBuffer
  * @param {Blob} blob Blob to convert
